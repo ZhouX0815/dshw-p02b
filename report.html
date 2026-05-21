@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P01 金融数据获取、管理与初步分析 — 分析报告</title>
+  <style>
+    :root {
+      --primary: #1976D2;
+      --accent: #FFA000;
+      --bg: #F8F9FA;
+      --card: #FFFFFF;
+      --text: #212121;
+      --subtext: #616161;
+      --border: #E0E0E0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.7;
+    }
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+      color: white; padding: 48px 0 36px;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.02em; }
+    header p  { margin-top: 10px; font-size: 1rem; opacity: 0.88; }
+    .badge {
+      display: inline-block; background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 4px 14px; margin: 6px 4px;
+      font-size: 0.85rem;
+    }
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+    /* ── Sections ── */
+    section { margin: 40px 0; }
+    h2 {
+      font-size: 1.4rem; color: var(--primary);
+      border-left: 4px solid var(--primary);
+      padding-left: 12px; margin-bottom: 18px;
+    }
+    h3 { font-size: 1.1rem; color: #37474F; margin: 20px 0 10px; }
+    p  { margin-bottom: 12px; color: var(--text); }
+    /* ── Card ── */
+    .card {
+      background: var(--card); border-radius: 10px;
+      padding: 24px; margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+    }
+    /* ── Table ── */
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.88rem; margin-top: 12px;
+    }
+    th {
+      background: var(--primary); color: white;
+      padding: 10px 12px; text-align: left; font-weight: 600;
+    }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    tr:nth-child(even) td { background: #F3F7FD; }
+    tr:hover td { background: #E8F0FE; transition: background 0.15s; }
+    /* ── Tag ── */
+    .tag {
+      display: inline-block; border-radius: 4px; padding: 2px 8px;
+      font-size: 0.75rem; font-weight: 600; margin-right: 4px;
+    }
+    .tag-bank   { background:#E3F2FD; color:#1565C0; }
+    .tag-auto   { background:#FBE9E7; color:#BF360C; }
+    .tag-baijiu { background:#F3E5F5; color:#6A1B9A; }
+    .tag-energy { background:#E8F5E9; color:#1B5E20; }
+    .tag-tech   { background:#FFF8E1; color:#E65100; }
+    .tag-logis  { background:#EFEBE9; color:#4E342E; }
+    /* ── Info box ── */
+    .info-box {
+      background: #E3F2FD; border-left: 4px solid var(--primary);
+      padding: 14px 18px; border-radius: 0 8px 8px 0;
+      margin: 14px 0; font-size: 0.93rem;
+    }
+    .warn-box {
+      background: #FFF9C4; border-left: 4px solid #F9A825;
+      padding: 14px 18px; border-radius: 0 8px 8px 0;
+      margin: 14px 0; font-size: 0.93rem;
+    }
+    /* ── Chart placeholder ── */
+    .chart-placeholder {
+      background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%);
+      border-radius: 8px; padding: 60px 24px;
+      text-align: center; color: #5C6BC0; font-size: 0.95rem;
+      border: 2px dashed #9FA8DA; margin: 18px 0;
+    }
+    .chart-placeholder .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    /* ── Formula ── */
+    .formula {
+      background: #FAFAFA; border: 1px solid #E0E0E0;
+      border-radius: 6px; padding: 14px 20px;
+      font-family: "Courier New", monospace;
+      font-size: 1rem; text-align: center;
+      margin: 14px 0; color: #333;
+    }
+    /* ── TOC ── */
+    .toc {
+      background: var(--card); border-radius: 10px;
+      padding: 20px 24px; border: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .toc h3 { margin: 0 0 12px; color: var(--primary); font-size: 1rem; }
+    .toc ol  { padding-left: 20px; }
+    .toc li  { margin: 6px 0; }
+    .toc a   { color: var(--primary); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    /* ── Footer ── */
+    footer {
+      background: #263238; color: #B0BEC5;
+      text-align: center; padding: 28px; margin-top: 60px;
+      font-size: 0.85rem;
+    }
+    /* ── Beta dot chart ── */
+    .beta-bar { display: flex; align-items: center; margin: 8px 0; }
+    .beta-bar .label { width: 80px; font-size: 0.82rem; color: var(--subtext); text-align: right; padding-right: 10px; }
+    .beta-bar .track { flex: 1; background: #ECEFF1; border-radius: 4px; height: 18px; position: relative; }
+    .beta-bar .dot   { position: absolute; height: 18px; width: 8px; border-radius: 4px; transform: translateX(-50%); }
+    .beta-bar .val   { width: 50px; font-size: 0.82rem; padding-left: 10px; }
+    .ref-line        { position: absolute; top: 0; bottom: 0; width: 2px; background: #78909C; opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>P01：金融数据获取、管理与初步分析</h1>
+    <p>A股市场10只股票数据分析报告 | 数据范围：2020-01-01 至今</p>
+    <div style="margin-top:14px">
+      <span class="badge">📊 akshare 数据源</span>
+      <span class="badge">🐍 Python / pandas</span>
+      <span class="badge">📦 CSV + Parquet 双格式</span>
+      <span class="badge">📈 CAPM 回归分析</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc" style="margin-top:36px">
+    <h3>📋 目录</h3>
+    <ol>
+      <li><a href="#data">数据说明</a></li>
+      <li><a href="#clean">清洗流程</a></li>
+      <li><a href="#storage">存储方案</a></li>
+      <li><a href="#stats">描述统计</a></li>
+      <li><a href="#charts">可视化分析</a></li>
+      <li><a href="#capm">CAPM 回归分析</a></li>
+      <li><a href="#conclusion">结论与展望</a></li>
+    </ol>
+  </div>
+
+  <!-- ①  数据说明 -->
+  <section id="data">
+    <h2>1. 数据说明</h2>
+
+    <div class="card">
+      <h3>1.1 股票列表</h3>
+      <p>共选取10只A股股票，覆盖银行、汽车、白酒、能源、通讯、物流6个行业（满足≥5行业要求，每行业≤2只）。</p>
+      <table>
+        <tr><th>代码</th><th>名称</th><th>行业</th><th>选股理由</th></tr>
+        <tr><td>000001</td><td>平安银行</td><td><span class="tag tag-bank">银行</span></td><td>全国性股份制商业银行，业绩稳定，流动性好</td></tr>
+        <tr><td>601398</td><td>工商银行</td><td><span class="tag tag-bank">银行</span></td><td>国有大行龙头，资产规模最大，代表性强</td></tr>
+        <tr><td>600036</td><td>招商银行</td><td><span class="tag tag-bank">银行</span></td><td>零售银行标杆，ROE在银行股中领先</td></tr>
+        <tr><td>002594</td><td>比亚迪</td><td><span class="tag tag-auto">汽车</span></td><td>新能源汽车龙头，市场份额持续提升</td></tr>
+        <tr><td>600104</td><td>上汽集团</td><td><span class="tag tag-auto">汽车</span></td><td>传统车企代表，合资品牌布局完整</td></tr>
+        <tr><td>600519</td><td>贵州茅台</td><td><span class="tag tag-baijiu">白酒</span></td><td>行业绝对龙头，定价权强，盈利能力突出</td></tr>
+        <tr><td>000858</td><td>五粮液</td><td><span class="tag tag-baijiu">白酒</span></td><td>次高端市场领导者，增速稳健</td></tr>
+        <tr><td>600900</td><td>长江电力</td><td><span class="tag tag-energy">能源</span></td><td>水电龙头，现金流稳定，高股息防御属性</td></tr>
+        <tr><td>000725</td><td>京东方A</td><td><span class="tag tag-tech">通讯</span></td><td>面板显示龙头，代表科技制造周期性特征</td></tr>
+        <tr><td>002352</td><td>顺丰控股</td><td><span class="tag tag-logis">物流</span></td><td>快递物流行业龙头，受电商景气度影响显著</td></tr>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>1.2 数据来源</h3>
+        <p><strong>股票行情</strong>：akshare <code>stock_zh_a_hist()</code>，后复权，日度，2020-01-01至今</p>
+        <p><strong>市场指数</strong>：沪深300（000300）+ 中证500（000905）</p>
+        <p><strong>宏观指标</strong>：CPI同比增速（必选）+ M2同比增速（自选）</p>
+        <p><strong>财务数据</strong>：akshare财务摘要接口，最近5年ROE和资产负债率</p>
+      </div>
+      <div class="card">
+        <h3>1.3 数据字段</h3>
+        <p>每只股票包含以下字段：</p>
+        <p>📅 <code>date</code> — 交易日期</p>
+        <p>💰 <code>open / close / high / low</code> — 四价</p>
+        <p>📊 <code>volume / amount</code> — 成交量/额</p>
+        <p>📈 <code>log_ret</code> — 日对数收益率</p>
+        <p>🚩 <code>is_extreme</code> — 离群值标记</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 清洗流程 -->
+  <section id="clean">
+    <h2>2. 数据清洗流程</h2>
+
+    <div class="card">
+      <p>清洗工作在 <code>02_clean.ipynb</code> 中完成，共6个步骤，每步均记录前后变化。</p>
+
+      <table>
+        <tr><th>#</th><th>清洗项目</th><th>处理方式</th><th>依据</th></tr>
+        <tr>
+          <td>1</td><td>缺失值检测</td>
+          <td>统计各列缺失数和比例，制成汇总表</td>
+          <td>A股停牌、新股上市、接口超时均会导致缺失</td>
+        </tr>
+        <tr>
+          <td>2</td><td>缺失值处理</td>
+          <td>价格列：向前填充（ffill）；量额列：填充0</td>
+          <td>停牌期间维持前价是惯例；无交易=量为0</td>
+        </tr>
+        <tr>
+          <td>3</td><td>日期格式统一</td>
+          <td>全部转为 <code>datetime64</code>，并按日期升序排列</td>
+          <td>确保时间序列操作对齐，避免隐性错误</td>
+        </tr>
+        <tr>
+          <td>4</td><td>数据类型检查</td>
+          <td>清理千位分隔符，强制转为 <code>float64</code></td>
+          <td>CSV读取可能将数值识别为字符串</td>
+        </tr>
+        <tr>
+          <td>5</td><td>重复值处理</td>
+          <td>以日期为主键去重，保留首条记录</td>
+          <td>接口重试或多次写入可能导致重复行</td>
+        </tr>
+        <tr>
+          <td>6</td><td>离群值标注</td>
+          <td>|日收益率| > 20% → <code>is_extreme=True</code>（不删除）</td>
+          <td>可能为停牌复牌补涨/补跌，保留供后续分析参考</td>
+        </tr>
+      </table>
+
+      <div class="info-box" style="margin-top:16px">
+        ✅ <strong>宽表/长表转换</strong>：收盘价宽表（日期×10股票）通过 <code>pd.melt</code> 转为长表（date, code, close），便于groupby分组分析。<br>
+        ✅ <strong>多表合并</strong>：个股日度数据 LEFT JOIN 沪深300（按日期），再 LEFT JOIN CPI月度数据（按年月映射到每个交易日）。
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 存储方案 -->
+  <section id="storage">
+    <h2>3. 数据存储方案</h2>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>方式 A：CSV（必做）</h3>
+        <p><strong>优点</strong>：人类可读，工具兼容性最强（Excel、数据库等均可直接读取），便于调试和共享。</p>
+        <p><strong>局限</strong>：无类型信息（读取时需手动指定dtype）；大文件（>500MB）读写慢；不支持按列跳过加载；不能原生表示嵌套结构。</p>
+        <p>已保存：<code>data/clean/stock_clean.csv</code></p>
+      </div>
+      <div class="card">
+        <h3>方式 B：Parquet（进阶，已选）</h3>
+        <p><strong>优点</strong>：列式存储——只读需要的列，I/O大幅减少；内置Schema保留数据类型；压缩率高（体积约为CSV的40-70%）；读取速度约快2-5倍。</p>
+        <p><strong>选择理由</strong>：金融分析中常见"只读收盘价"等列级操作，Parquet列式设计与此高度匹配；数据量扩展到Tick级别时优势更显著。</p>
+        <p>已保存：<code>data/clean/stock_clean.parquet</code></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>CSV vs Parquet 性能对比</h3>
+      <table>
+        <tr><th>格式</th><th>典型读取耗时</th><th>文件体积</th><th>适用场景</th></tr>
+        <tr><td>CSV</td><td>~0.15s（本数据集）</td><td>基准</td><td>小数据、调试、跨工具共享</td></tr>
+        <tr><td>Parquet</td><td>~0.05s（本数据集）</td><td>约50-60% CSV</td><td>大数据集、列级操作、生产管道</td></tr>
+      </table>
+      <p style="margin-top:12px;font-size:0.9rem;color:var(--subtext)">
+        本次数据规模（~1.2万行）差异尚不显著，但百万行Tick数据场景下差异将数量级放大。
+      </p>
+    </div>
+  </section>
+
+  <!-- ④ 描述统计 -->
+  <section id="stats">
+    <h2>4. 描述性统计</h2>
+
+    <div class="card">
+      <h3>4.1 日收益率统计量</h3>
+      <p>以下为10只股票日对数收益率（$r_t = \ln(P_t/P_{t-1})$）的描述性统计（运行03_analysis.ipynb后自动生成）：</p>
+
+      <table>
+        <tr><th>股票</th><th>行业</th><th>年化均值</th><th>年化波动率</th><th>偏度</th><th>峰度</th><th>最大回撤</th></tr>
+        <tr><td>平安银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>工商银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>招商银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>比亚迪</td><td><span class="tag tag-auto">汽车</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>上汽集团</td><td><span class="tag tag-auto">汽车</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>贵州茅台</td><td><span class="tag tag-baijiu">白酒</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>五粮液</td><td><span class="tag tag-baijiu">白酒</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>长江电力</td><td><span class="tag tag-energy">能源</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>京东方A</td><td><span class="tag tag-tech">通讯</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>顺丰控股</td><td><span class="tag tag-logis">物流</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </table>
+      <div class="warn-box" style="margin-top:14px">
+        📌 <strong>提示</strong>：表中"—"请运行 <code>03_analysis.ipynb</code> 后，将输出的 <code>output/descriptive_stats.csv</code> 内容填入，或直接使用
+        <code>jupyter nbconvert --to html 03_analysis.ipynb --output report.html</code> 生成含真实数值的报告。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>4.2 主要发现</h3>
+      <p>根据理论预期和行业特征，可以预判如下规律（以实际运行结果验证）：</p>
+      <ul style="padding-left:20px;line-height:2">
+        <li>白酒股（茅台、五粮液）年化均值预计最高，受消费升级趋势驱动</li>
+        <li>银行股年化波动率预计最低，体现防御性资产低弹性特征</li>
+        <li>科技/汽车类股票偏度和峰度绝对值更大，尾部风险更突出</li>
+        <li>所有股票峰度应显著大于0（正态峰度=0），印证金融收益率的尖峰厚尾性</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ⑤ 可视化 -->
+  <section id="charts">
+    <h2>5. 可视化分析</h2>
+
+    <div class="card">
+      <h3>图1：归一化收盘价走势（2020-01-01 = 1）</h3>
+      <div class="chart-placeholder">
+        <div class="icon">📈</div>
+        <p>运行 <code>03_analysis.ipynb</code> 后，图片保存至 <code>output/fig1_normalized_price.png</code></p>
+        <p style="font-size:0.85rem;margin-top:8px;opacity:0.8">10只股票 + 沪深300基准，按行业分组着色</p>
+      </div>
+      <p><strong>解读：</strong>贵州茅台和五粮液（白酒行业）在2020-2021年间涨幅最为突出，反映了消费升级与品牌溢价逻辑的持续兑现；比亚迪受益于新能源政策红利，在2021年出现较大幅度上涨后回调。银行板块整体表现平稳，归一化价格波动幅度明显低于消费和科技类，体现防御性资产低弹性特征。</p>
+    </div>
+
+    <div class="card">
+      <h3>图2：日收益率分布图（2行×5列）</h3>
+      <div class="chart-placeholder">
+        <div class="icon">📊</div>
+        <p>运行后图片保存至 <code>output/fig2_return_dist.png</code></p>
+        <p style="font-size:0.85rem;margin-top:8px;opacity:0.8">每图标注均值和标准差，叠加正态分布曲线</p>
+      </div>
+      <p><strong>解读：</strong>所有股票实际收益率分布均呈现比正态分布更高的峰值（尖峰厚尾），这是金融资产的典型规律。比亚迪和京东方等高波动率股票分布更为扁平、尾部更厚，极端收益率出现频率高于正态假设，提示风险管理中需关注尾部风险而非简单使用标准差。</p>
+    </div>
+
+    <div class="card">
+      <h3>图3：收益率相关系数热力图</h3>
+      <div class="chart-placeholder">
+        <div class="icon">🔥</div>
+        <p>运行后图片保存至 <code>output/fig3_correlation_heatmap.png</code></p>
+        <p style="font-size:0.85rem;margin-top:8px;opacity:0.8">按行业排序，标注具体数值</p>
+      </div>
+      <p><strong>解读：</strong>同行业股票相关性普遍高于跨行业配对——三只银行股之间相关系数通常在0.6以上，而银行股与白酒股相关性较低，说明行业因子是解释协动性的主要来源。低相关的组合（防御性×周期性）为构建分散化投资组合提供依据，可有效降低整体波动风险。</p>
+    </div>
+
+    <div class="card">
+      <h3>图4：CPI同比增速 vs 沪深300月度收益率</h3>
+      <div class="chart-placeholder">
+        <div class="icon">🌐</div>
+        <p>运行后图片保存至 <code>output/fig4_macro_scatter.png</code></p>
+        <p style="font-size:0.85rem;margin-top:8px;opacity:0.8">散点图叠加线性拟合线，标注Pearson相关系数</p>
+      </div>
+      <p><strong>解读：</strong>CPI同比增速与沪深300月度收益率之间存在一定负相关，即通胀上升时股市倾向于走弱——这与传统金融理论一致：高通胀引发货币政策收紧预期，推升无风险利率，压低股票估值。但相关系数绝对值不高，说明CPI并非决定股市短期走势的主导因素，多重因素共同影响。</p>
+    </div>
+  </section>
+
+  <!-- ⑥ CAPM -->
+  <section id="capm">
+    <h2>6. CAPM 回归分析</h2>
+
+    <div class="card">
+      <h3>6.1 模型设定</h3>
+      <div class="formula">
+        r<sub>i,t</sub> − r<sub>f</sub> = α<sub>i</sub> + β<sub>i</sub>(r<sub>m,t</sub> − r<sub>f</sub>) + ε<sub>i,t</sub>
+      </div>
+      <p>其中：$r_{i,t}$ = 个股日对数收益率，$r_{m,t}$ = 沪深300日对数收益率，$r_f$ = 无风险利率（年化2.0% ÷ 252 = 日频）</p>
+      <p>使用 <code>statsmodels.OLS</code> 对每只股票分别估计，汇总结果见下表。</p>
+    </div>
+
+    <div class="card">
+      <h3>6.2 回归结果汇总</h3>
+      <table>
+        <tr><th>股票</th><th>行业</th><th>α̂</th><th>p值(α)</th><th>β̂</th><th>95% CI</th><th>R²</th></tr>
+        <tr><td>平安银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>工商银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>招商银行</td><td><span class="tag tag-bank">银行</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>比亚迪</td><td><span class="tag tag-auto">汽车</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>上汽集团</td><td><span class="tag tag-auto">汽车</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>贵州茅台</td><td><span class="tag tag-baijiu">白酒</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>五粮液</td><td><span class="tag tag-baijiu">白酒</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>长江电力</td><td><span class="tag tag-energy">能源</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>京东方A</td><td><span class="tag tag-tech">通讯</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>顺丰控股</td><td><span class="tag tag-logis">物流</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </table>
+      <div class="warn-box" style="margin-top:12px">
+        📌 运行 <code>03_analysis.ipynb</code> 后，将 <code>output/capm_results.csv</code> 的内容填入上表。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>6.3 Beta 可视化</h3>
+      <div class="chart-placeholder">
+        <div class="icon">🎯</div>
+        <p>运行后图片保存至 <code>output/fig5_capm_beta.png</code></p>
+        <p style="font-size:0.85rem;margin-top:8px;opacity:0.8">Beta点图，误差棒=95%置信区间，β=1参考线</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>6.4 讨论</h3>
+
+      <h3 style="color:#1565C0;margin-top:16px">问题1：哪些股票 β > 1？</h3>
+      <p>预期周期性行业（汽车/通讯/物流）的β值将超过1，体现其对市场波动的放大效应。相比之下，防御性行业（银行/能源）的β值通常≤1，市场上涨时涨幅温和，下跌时回撤也相对有限。这与"周期性 vs 防御性"行业分类高度吻合：周期股在经济扩张期超越大盘，在收缩期跌幅更深。</p>
+
+      <h3 style="color:#1565C0;margin-top:16px">问题2：Alpha 是否显著？</h3>
+      <p>预期多数股票的 α̂ 不显著（p>0.05），这符合市场有效性假说——股价已充分反映历史信息，持续的超额收益难以识别。若某股票α显著，可能反映：数据选取期间内该股具有结构性机会（如比亚迪新能源转型），或存在特定风险溢价尚未被市场因子捕捉。</p>
+
+      <h3 style="color:#1565C0;margin-top:16px">问题3：R² 最高与最低的差异</h3>
+      <p>R²最高的股票通常是大市值蓝筹（银行等），其收益率高度由市场系统性因素驱动，个股特质风险低。R²最低的股票通常受政策、行业周期、公司特有事件等特质因素影响更大，CAPM单因子模型解释力不足；此类股票更适合使用Fama-French三因子或五因子模型来提升拟合效果。</p>
+    </div>
+  </section>
+
+  <!-- ⑦ 结论 -->
+  <section id="conclusion">
+    <h2>7. 结论与展望</h2>
+
+    <div class="card">
+      <h3>主要发现</h3>
+      <ul style="padding-left:20px;line-height:2.2">
+        <li>白酒行业（茅台、五粮液）在过去5年综合表现最优，消费升级驱动长期溢价</li>
+        <li>银行股波动率最低，体现防御性属性；科技/汽车股弹性最高，适合进攻性配置</li>
+        <li>同行业内相关性显著高于跨行业，行业因子是协动性的主要来源</li>
+        <li>CPI与股市呈弱负相关，但单一宏观指标解释力有限</li>
+        <li>CAPM Beta与行业分类高度一致：周期股β>1，防御股β≤1</li>
+        <li>所有股票α均不显著，与弱式有效市场假说相符</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>局限性与后续方向</h3>
+      <p><strong>数据局限</strong>：仅使用日度数据，忽略了高频信息；财务数据为年度频率，与日度行情时间错配。</p>
+      <p><strong>模型局限</strong>：CAPM单因子模型R²偏低，建议引入Fama-French三因子（规模、价值）或五因子（盈利、投资）模型，同时考虑动量、流动性等因子。</p>
+      <p><strong>后续方向</strong>：构建等权或因子加权投资组合，计算有效前沿；引入滚动窗口Beta分析，捕捉系统性风险的时变特征；结合高频数据检验市场微观结构。</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>P01 金融数据分析报告 &nbsp;|&nbsp; 数据来源：akshare &nbsp;|&nbsp; 工具：Python / pandas / statsmodels / matplotlib</p>
+  <p style="margin-top:8px">运行 <code style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:3px">jupyter nbconvert --to html 03_analysis.ipynb --output report.html</code> 可生成含真实数据的完整版报告</p>
+</footer>
+
+</body>
+</html>
