@@ -1,4 +1,5 @@
-# P02b：CSMAR 上市公司财务特征清洗与分析
+ # 姓名：郑昕 学号：25210309
+ # P02b：CSMAR 上市公司财务特征清洗与分析
 
 ## 数据来源
 
@@ -59,7 +60,7 @@
 
 ## GitHub 仓库
 
-https://github.com/[your_username]/dshw-p02b
+https://github.com/ZhouX0815/dshw-p02b
 
 ## 如何运行
 
